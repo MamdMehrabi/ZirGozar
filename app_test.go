@@ -17,7 +17,7 @@ func TestXrayLifecycleThroughApp(t *testing.T) {
 	dir := t.TempDir()
 	binaryPath := filepath.Join(dir, "xray")
 	configPath := filepath.Join(dir, "config.json")
-	if err := os.WriteFile(binaryPath, []byte("#!/bin/sh\nexec sleep 30\n"), 0o755); err != nil {
+	if err := os.WriteFile(binaryPath, []byte("#!/bin/sh\nif [ \"$1\" = run ] && [ \"$2\" = -test ]; then exit 0; fi\nexec sleep 30\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(configPath, []byte("{}"), 0o600); err != nil {

@@ -79,6 +79,26 @@ func TestConfigFromURI(t *testing.T) {
 	}
 }
 
+func TestValidateProxyURI(t *testing.T) {
+	tests := []struct {
+		name string
+		uri  string
+		want bool
+	}{
+		{name: "supported URI", uri: "vless://11111111-1111-4111-8111-111111111111@proxy.example:443", want: true},
+		{name: "unsupported scheme", uri: "ftp://proxy.example/file", want: false},
+		{name: "malformed URI", uri: "vless://", want: false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := ValidateProxyURI(test.uri)
+			if (err == nil) != test.want {
+				t.Fatalf("ValidateProxyURI() error = %v, want success %t", err, test.want)
+			}
+		})
+	}
+}
+
 func TestConfigFromURIMapsStreamSettings(t *testing.T) {
 	generated, err := configFromURI("vless://user@example.com:443?security=reality&sni=site.example&fp=chrome&pbk=key&sid=1234&spx=%2F&type=xhttp&host=cdn.example&path=%2Fsocket")
 	if err != nil {

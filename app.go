@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/MamdMehrabi/packet-drift/internal/xray"
+	"github.com/MamdMehrabi/zirgozar/internal/xray"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -77,6 +77,18 @@ func (a *App) FetchSubscription(subscriptionURL string) ([]xray.SubscriptionNode
 	return xray.FetchSubscription(subscriptionURL)
 }
 
+func (a *App) ValidateProxyURI(proxyURI string) error {
+	return xray.ValidateProxyURI(proxyURI)
+}
+
+func (a *App) ValidateXrayConfig(configPath string) error {
+	binaryPath, err := xray.DefaultBinaryPath()
+	if err != nil {
+		return err
+	}
+	return xray.ValidateConfigFile(binaryPath, configPath)
+}
+
 // PingServer measures the TCP connection latency for a supported proxy URI.
 func (a *App) PingServer(proxyURI string) (int64, error) {
 	return xray.CheckServerLatency(proxyURI)
@@ -91,6 +103,9 @@ func (a *App) StartXray(binaryPath, configPath string) error {
 		if err != nil {
 			return err
 		}
+	}
+	if err := xray.ValidateConfigFile(binaryPath, configPath); err != nil {
+		return err
 	}
 	return a.xray.Start(binaryPath, configPath)
 }
@@ -118,4 +133,8 @@ func (a *App) StartXrayWithURI(binaryPath, proxyURI, mode, proxyAddress string) 
 // GetTrafficStats returns cumulative Xray outbound traffic and current rates.
 func (a *App) GetTrafficStats() (xray.TrafficStats, error) {
 	return a.xray.Traffic()
+}
+
+func (a *App) OpenTelegramChannel() {
+	runtime.BrowserOpenURL(a.ctx, "https://t.me/TheCommit")
 }

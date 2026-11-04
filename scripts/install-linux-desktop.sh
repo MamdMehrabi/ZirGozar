@@ -6,14 +6,14 @@ icon_source="$project_dir/build/appicon.png"
 
 if [ "$#" -gt 0 ]; then
 	app_binary=$1
-elif [ -x "$project_dir/build/bin/packet-drift" ]; then
-	app_binary="$project_dir/build/bin/packet-drift"
-elif [ -x "$project_dir/build/bin/packet-drift-dev-linux-amd64" ]; then
-	app_binary="$project_dir/build/bin/packet-drift-dev-linux-amd64"
-elif command -v packet-drift >/dev/null 2>&1; then
-	app_binary=$(command -v packet-drift)
+elif [ -x "$project_dir/build/bin/zirgozar" ]; then
+	app_binary="$project_dir/build/bin/zirgozar"
+elif [ -x "$project_dir/build/bin/zirgozar-dev-linux-amd64" ]; then
+	app_binary="$project_dir/build/bin/zirgozar-dev-linux-amd64"
+elif command -v zirgozar >/dev/null 2>&1; then
+	app_binary=$(command -v zirgozar)
 else
-	printf '%s\n' 'Packet Drift binary not found. Build the app or pass its path.' >&2
+	printf '%s\n' 'ZirGozar binary not found. Build the app or pass its path.' >&2
 	exit 1
 fi
 
@@ -28,12 +28,12 @@ fi
 
 icon_dir="$HOME/.local/share/icons/hicolor/512x512/apps"
 desktop_dir="$HOME/.local/share/applications"
-install -D -m 644 "$icon_source" "$icon_dir/packet-drift.png"
+install -D -m 644 "$icon_source" "$icon_dir/zirgozar.png"
 install -d -m 755 "$desktop_dir"
 
 escaped_binary=$(printf '%s' "$app_binary" | sed -e 's/\\/\\\\/g' -e 's/ /\\ /g' -e 's/&/\\&/g' -e 's|/|\\/|g')
-sed "s/^Exec=.*/Exec=$escaped_binary/" "$project_dir/build/linux/packet-drift.desktop" > "$desktop_dir/packet-drift.desktop"
-chmod 644 "$desktop_dir/packet-drift.desktop"
+sed "s/^Exec=.*/Exec=$escaped_binary/" "$project_dir/build/linux/zirgozar.desktop" > "$desktop_dir/zirgozar.desktop"
+chmod 644 "$desktop_dir/zirgozar.desktop"
 
 if command -v gtk-update-icon-cache >/dev/null 2>&1; then
 	gtk-update-icon-cache -f "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
@@ -42,4 +42,4 @@ if command -v update-desktop-database >/dev/null 2>&1; then
 	update-desktop-database "$desktop_dir" >/dev/null 2>&1 || true
 fi
 
-printf 'Installed Packet Drift desktop icon for %s\n' "$app_binary"
+printf 'Installed ZirGozar desktop icon for %s\n' "$app_binary"

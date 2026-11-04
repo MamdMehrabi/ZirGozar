@@ -1,5 +1,5 @@
 
-name: Build Packet Drift
+name: Build ZirGozar
 
 on:
   push:
@@ -144,7 +144,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: packet-drift-${{ matrix.os }}
+          name: zirgozar-${{ matrix.os }}
           path: build/bin/
           if-no-files-found: error
           retention-days: 7

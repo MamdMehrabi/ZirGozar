@@ -15,7 +15,7 @@ var bundledAssets embed.FS
 
 const (
 	bundledAssetsDirectory = "assets"
-	xrayCacheDirectory     = "packet-drift"
+	xrayCacheDirectory     = "zirgozar"
 	xrayVersion            = "xray-v26.3.27"
 	xrayBinaryName         = "xray"
 	xrayWindowsBinaryName  = "xray.exe"

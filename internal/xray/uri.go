@@ -14,6 +14,11 @@ func configFromURI(rawURI string) (string, error) {
 	return configFromURIWithOptions(rawURI, "proxy", "127.0.0.1:10808")
 }
 
+func ValidateProxyURI(rawURI string) error {
+	_, err := configFromURI(rawURI)
+	return err
+}
+
 func configFromURIWithOptions(rawURI, mode, proxyAddress string) (string, error) {
 	rawURI = strings.TrimSpace(rawURI)
 	if rawURI == "" {
@@ -49,10 +54,10 @@ func configFromURIWithOptions(rawURI, mode, proxyAddress string) (string, error)
 		inbound = map[string]any{
 			"protocol": "tun",
 			"settings": map[string]any{
-				"name":       "packet-drift0",
+				"name":       "zirgozar0",
 				"MTU":        1500,
 				"Address":    []string{"172.19.0.1/30"},
-				"Gateway":    "172.19.0.2",
+				"Gateway":    []string{"172.19.0.2"},
 				"EnableIPv6": false,
 			},
 			"tag": "local-tun",

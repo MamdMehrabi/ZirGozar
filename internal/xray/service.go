@@ -93,7 +93,7 @@ func (s *Service) startWithConfig(binaryPath, rawConfig string, outboundTags []s
 	if err != nil {
 		return fmt.Errorf("xray: locate cache directory: %w", err)
 	}
-	tempDir, err := os.MkdirTemp(cacheDir, "packet-drift-xray-")
+	tempDir, err := os.MkdirTemp(cacheDir, "zirgozar-xray-")
 	if err != nil {
 		return fmt.Errorf("xray: create private config directory: %w", err)
 	}
@@ -103,11 +103,15 @@ func (s *Service) startWithConfig(binaryPath, rawConfig string, outboundTags []s
 		return fmt.Errorf("xray: write private config: %w", err)
 	}
 	validateCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	output, err := exec.CommandContext(validateCtx, binaryPath, "run", "-test", "-c", configPath).CombinedOutput()
+	err = exec.CommandContext(validateCtx, binaryPath, "run", "-test", "-c", configPath).Run()
+	timedOut := errors.Is(validateCtx.Err(), context.DeadlineExceeded)
 	cancel()
 	if err != nil {
 		_ = os.RemoveAll(tempDir)
-		return fmt.Errorf("xray: validate config: %w: %s", err, strings.TrimSpace(string(output)))
+		if timedOut {
+			return fmt.Errorf("xray: validate config: timed out")
+		}
+		return fmt.Errorf("xray: validate config: Xray rejected the generated configuration; check URI compatibility")
 	}
 	if err := s.start(binaryPath, configPath, apiAddress, tempDir, outboundTags); err != nil {
 		_ = os.RemoveAll(tempDir)
@@ -318,7 +322,7 @@ func instrumentConfig(rawConfig, apiAddress string) ([]byte, error) {
 	}
 	tag, _ := api["tag"].(string)
 	if tag == "" {
-		tag = "packet-drift-api"
+		tag = "zirgozar-api"
 		api["tag"] = tag
 	}
 	api["listen"] = apiAddress

@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=Packet Drift
+Name=ZirGozar
 Comment=Manage Xray proxy connections
-Exec=packet-drift
-Icon=packet-drift
+Exec=zirgozar
+Icon=zirgozar
 Terminal=false
 Categories=Network;
 StartupNotify=true
-StartupWMClass=packet-drift
+StartupWMClass=zirgozar

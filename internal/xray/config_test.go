@@ -57,3 +57,20 @@ func TestParseTrafficCountersForConfiguredOutbounds(t *testing.T) {
 		t.Fatalf("parseTrafficCountersForTags() = (%d, %d), want (1200, 4500)", upload, download)
 	}
 }
+
+func TestConfigFromURIUsesZirGozarTunnelName(t *testing.T) {
+	configJSON, err := configFromURIWithOptions("vless://11111111-1111-4111-8111-111111111111@proxy.example:443", "tunnel", "")
+	if err != nil {
+		t.Fatalf("configFromURIWithOptions() error = %v", err)
+	}
+	var config map[string]any
+	if err := json.Unmarshal([]byte(configJSON), &config); err != nil {
+		t.Fatalf("decode generated config: %v", err)
+	}
+	inbounds := config["inbounds"].([]any)
+	inbound := inbounds[0].(map[string]any)
+	settings := inbound["settings"].(map[string]any)
+	if got := settings["name"]; got != "zirgozar0" {
+		t.Fatalf("tunnel settings.name = %v, want %q", got, "zirgozar0")
+	}
+}

@@ -1,4 +1,4 @@
-module github.com/MamdMehrabi/packet-drift
+module github.com/MamdMehrabi/zirgozar
 
 go 1.25.0
 

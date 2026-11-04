@@ -19,19 +19,21 @@ func main() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:         "Packet Drift",
-		Width:         760,
-		Height:        600,
-		DisableResize: true,
+		Title:         "ZirGozar",
+		Width:         920,
+		Height:        760,
+		MinWidth:      800,
+		MinHeight:     680,
+		DisableResize: false,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		Linux: &linux.Options{
-			Icon:              appIcon,
-			ProgramName:       "packet-drift",
+			Icon:             appIcon,
+			ProgramName:      "zirgozar",
 			WebviewGpuPolicy: linux.WebviewGpuPolicyNever,
 		},
-		BackgroundColour: &options.RGBA{R: 18, G: 18, B: 18, A: 1},
+		BackgroundColour: &options.RGBA{R: 11, G: 20, B: 33, A: 1},
 		OnStartup:        app.startup,
 		OnShutdown:       app.shutdown,
 		Bind: []interface{}{
