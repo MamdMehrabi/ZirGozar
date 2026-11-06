@@ -86,8 +86,8 @@ jobs:
           - os: ubuntu-24.04
             platform: linux
 
-          - os: windows-latest
-            platform: windows
+        #   - os: windows-latest
+        #     platform: windows
 
           - os: macos-latest
             platform: macos
