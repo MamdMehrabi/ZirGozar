@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -27,6 +28,11 @@ case "$(uname -s)/$(uname -m)" in
         architecture="arm64-v8a"
         directory="linux-arm64"
         ;;
+    MINGW64_NT-*/x86_64|MSYS_NT-*/x86_64|CYGWIN_NT-*/x86_64)
+        platform="windows"
+        architecture="64"
+        directory="windows-amd64"
+        ;;
     *)
         echo "Unsupported host: $(uname -s)/$(uname -m)" >&2
         exit 1
@@ -42,6 +48,7 @@ trap 'rm -rf "$tmp_dir"' EXIT
 mkdir -p "$ASSETS_DIR/$directory"
 
 echo "Downloading Xray ${XRAY_VERSION} for ${platform}/${architecture}..."
+
 curl --fail --location --silent --show-error "$url" \
     --output "$tmp_dir/xray.zip"
 
@@ -53,12 +60,15 @@ if [[ "$platform" == "windows" ]]; then
 fi
 
 if [[ ! -f "$tmp_dir/extracted/$binary_name" ]]; then
-    echo "Expected binary not found in release archive" >&2
+    echo "Expected binary not found in release archive: $binary_name" >&2
     exit 1
 fi
 
 cp "$tmp_dir/extracted/$binary_name" "$ASSETS_DIR/$directory/"
-chmod +x "$ASSETS_DIR/$directory/$binary_name"
+
+if [[ "$platform" != "windows" ]]; then
+    chmod +x "$ASSETS_DIR/$directory/$binary_name"
+fi
 
 for asset in geoip.dat geosite.dat; do
     if [[ -f "$tmp_dir/extracted/$asset" ]]; then
