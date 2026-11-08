@@ -128,11 +128,6 @@ jobs:
             libwebkit2gtk-4.1-dev \
             dpkg-dev
 
-      # استفاده از اکشن رسمی و تضمینی برای NSIS
-      - name: Setup NSIS
-        if: runner.os == 'Windows'
-        uses: joncloud/makensis-action@v4
-
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
 
@@ -165,11 +160,8 @@ jobs:
             wails build -tags webkit2_41
 
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            if [[ "${{ matrix.arch }}" == "amd64" ]]; then
-              wails build -platform windows/amd64 -nsis
-            else
-              wails build -platform windows/${{ matrix.arch }}
-            fi
+            # برای ویندوز کاملاً ساده و بدون NSIS بیلد میکنیم
+            wails build -platform windows/${{ matrix.arch }}
 
           else
             wails build
@@ -245,7 +237,7 @@ jobs:
             --build "$PKG_ROOT" \
             "release-assets/ZirGozar-${GITHUB_REF_NAME}-linux-amd64.deb"
 
-      # Windows artifacts
+      # Windows artifacts (Simple EXE version)
       - name: Package Windows artifacts
         if: runner.os == 'Windows'
         shell: bash
@@ -255,56 +247,22 @@ jobs:
           ARCH="${{ matrix.arch }}"
           mkdir -p release-assets
 
-          echo "Packaging for Windows arch: $ARCH"
-          ls -lah build/bin/ || true
+          # پیدا کردن فایل exe ساخته شده
+          BINARY="$(find build/bin \
+            -maxdepth 1 \
+            -type f \
+            -iname '*.exe' \
+            -print -quit)"
 
-          if [[ "$ARCH" == "amd64" ]]; then
-            # برای amd64 باید هم فایل نصبی و هم فایل پرتابل را استخراج کنیم
-            INSTALLER="$(find build/bin \
-              -maxdepth 1 \
-              -type f \
-              -iname '*installer*.exe' \
-              -print -quit)"
-
-            if [[ -z "$INSTALLER" ]]; then
-              echo "NSIS installer not found for amd64."
-              ls -lah build/bin/
-              exit 1
-            fi
-
-            cp "$INSTALLER" \
-              "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-amd64-setup.exe"
-
-            PORTABLE="$(find build/bin \
-              -maxdepth 1 \
-              -type f \
-              -iname '*.exe' \
-              ! -iname '*installer*' \
-              -print -quit)"
-
-            if [[ -n "$PORTABLE" ]]; then
-              cp "$PORTABLE" \
-                "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-amd64.exe"
-            fi
-
-          else
-            # برای 386 و arm64 فقط فایل پرتابل (exe) تولید می‌شود
-            BINARY="$(find build/bin \
-              -maxdepth 1 \
-              -type f \
-              -iname '*.exe' \
-              ! -iname '*installer*' \
-              -print -quit)"
-
-            if [[ -z "$BINARY" ]]; then
-              echo "Windows $ARCH binary not found."
-              ls -lah build/bin/
-              exit 1
-            fi
-
-            cp "$BINARY" \
-              "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-${ARCH}.exe"
+          if [[ -z "$BINARY" ]]; then
+            echo "Windows $ARCH binary not found."
+            ls -lah build/bin/
+            exit 1
           fi
+
+          # کپی کردن با نام دقیق معماری
+          cp "$BINARY" \
+            "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-${ARCH}.exe"
 
       # macOS DMG
       - name: Package macOS DMG
