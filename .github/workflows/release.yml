@@ -128,10 +128,10 @@ jobs:
             libwebkit2gtk-4.1-dev \
             dpkg-dev
 
-      - name: Install NSIS
-        if: runner.os == 'Windows' && matrix.arch == 'amd64'
-        shell: pwsh
-        run: choco install nsis --yes --no-progress
+      # استفاده از اکشن رسمی و تضمینی برای NSIS
+      - name: Setup NSIS
+        if: runner.os == 'Windows'
+        uses: joncloud/makensis-action@v4
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
@@ -259,6 +259,7 @@ jobs:
           ls -lah build/bin/ || true
 
           if [[ "$ARCH" == "amd64" ]]; then
+            # برای amd64 باید هم فایل نصبی و هم فایل پرتابل را استخراج کنیم
             INSTALLER="$(find build/bin \
               -maxdepth 1 \
               -type f \
@@ -274,7 +275,20 @@ jobs:
             cp "$INSTALLER" \
               "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-amd64-setup.exe"
 
+            PORTABLE="$(find build/bin \
+              -maxdepth 1 \
+              -type f \
+              -iname '*.exe' \
+              ! -iname '*installer*' \
+              -print -quit)"
+
+            if [[ -n "$PORTABLE" ]]; then
+              cp "$PORTABLE" \
+                "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-amd64.exe"
+            fi
+
           else
+            # برای 386 و arm64 فقط فایل پرتابل (exe) تولید می‌شود
             BINARY="$(find build/bin \
               -maxdepth 1 \
               -type f \
