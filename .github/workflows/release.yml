@@ -1,4 +1,3 @@
-
 name: Release ZirGozar
 
 on:
@@ -74,7 +73,7 @@ jobs:
         run: go test ./...
 
   build:
-    name: Build ${{ matrix.platform }}
+    name: Build ${{ matrix.platform }}${{ matrix.arch && format(' ({0})', matrix.arch) || '' }}
     needs: test
 
     runs-on: ${{ matrix.os }}
@@ -86,8 +85,13 @@ jobs:
           - os: ubuntu-24.04
             platform: linux
 
-        #   - os: windows-latest
-        #     platform: windows
+          - os: windows-latest
+            platform: windows
+            arch: amd64
+
+          - os: windows-latest
+            platform: windows
+            arch: "386"
 
           - os: macos-latest
             platform: macos
@@ -121,7 +125,7 @@ jobs:
             dpkg-dev
 
       - name: Install NSIS
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && matrix.arch == 'amd64'
         shell: pwsh
         run: choco install nsis --yes --no-progress
 
@@ -157,7 +161,11 @@ jobs:
             wails build -tags webkit2_41
 
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            wails build -nsis
+            if [[ "${{ matrix.arch }}" == "amd64" ]]; then
+              wails build -platform windows/amd64 -nsis
+            else
+              wails build -platform windows/386
+            fi
 
           else
             wails build
@@ -233,29 +241,48 @@ jobs:
             --build "$PKG_ROOT" \
             "release-assets/ZirGozar-${GITHUB_REF_NAME}-linux-amd64.deb"
 
-      # Windows installer
-      - name: Package Windows installer
+      # Windows artifacts (amd64 installer + 386 portable)
+      - name: Package Windows artifacts
         if: runner.os == 'Windows'
         shell: bash
         run: |
           set -euo pipefail
 
-          INSTALLER="$(find build/bin \
-            -maxdepth 1 \
-            -type f \
-            -iname '*installer*.exe' \
-            -print -quit)"
-
-          if [[ -z "$INSTALLER" ]]; then
-            echo "NSIS installer not found."
-            ls -lah build/bin/
-            exit 1
-          fi
-
+          ARCH="${{ matrix.arch }}"
           mkdir -p release-assets
 
-          cp "$INSTALLER" \
-            "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-amd64-setup.exe"
+          if [[ "$ARCH" == "amd64" ]]; then
+            INSTALLER="$(find build/bin \
+              -maxdepth 1 \
+              -type f \
+              -iname '*installer*.exe' \
+              -print -quit)"
+
+            if [[ -z "$INSTALLER" ]]; then
+              echo "NSIS installer not found."
+              ls -lah build/bin/
+              exit 1
+            fi
+
+            cp "$INSTALLER" \
+              "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-amd64-setup.exe"
+          else
+            BINARY="$(find build/bin \
+              -maxdepth 1 \
+              -type f \
+              -iname '*.exe' \
+              ! -iname '*installer*' \
+              -print -quit)"
+
+            if [[ -z "$BINARY" ]]; then
+              echo "32-bit binary not found."
+              ls -lah build/bin/
+              exit 1
+            fi
+
+            cp "$BINARY" \
+              "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-386.exe"
+          fi
 
       # macOS DMG
       - name: Package macOS DMG
@@ -290,7 +317,7 @@ jobs:
       - name: Upload platform packages
         uses: actions/upload-artifact@v4
         with:
-          name: packages-${{ matrix.platform }}
+          name: packages-${{ matrix.platform }}-${{ matrix.arch || 'default' }}
           path: release-assets/*
           if-no-files-found: error
           retention-days: 7
