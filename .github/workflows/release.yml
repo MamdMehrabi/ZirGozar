@@ -93,6 +93,10 @@ jobs:
             platform: windows
             arch: "386"
 
+          - os: windows-latest
+            platform: windows
+            arch: arm64
+
           - os: macos-latest
             platform: macos
 
@@ -164,7 +168,7 @@ jobs:
             if [[ "${{ matrix.arch }}" == "amd64" ]]; then
               wails build -platform windows/amd64 -nsis
             else
-              wails build -platform windows/386
+              wails build -platform windows/${{ matrix.arch }}
             fi
 
           else
@@ -241,7 +245,7 @@ jobs:
             --build "$PKG_ROOT" \
             "release-assets/ZirGozar-${GITHUB_REF_NAME}-linux-amd64.deb"
 
-      # Windows artifacts (amd64 installer + 386 portable)
+      # Windows artifacts
       - name: Package Windows artifacts
         if: runner.os == 'Windows'
         shell: bash
@@ -251,6 +255,9 @@ jobs:
           ARCH="${{ matrix.arch }}"
           mkdir -p release-assets
 
+          echo "Packaging for Windows arch: $ARCH"
+          ls -lah build/bin/ || true
+
           if [[ "$ARCH" == "amd64" ]]; then
             INSTALLER="$(find build/bin \
               -maxdepth 1 \
@@ -259,13 +266,14 @@ jobs:
               -print -quit)"
 
             if [[ -z "$INSTALLER" ]]; then
-              echo "NSIS installer not found."
+              echo "NSIS installer not found for amd64."
               ls -lah build/bin/
               exit 1
             fi
 
             cp "$INSTALLER" \
               "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-amd64-setup.exe"
+
           else
             BINARY="$(find build/bin \
               -maxdepth 1 \
@@ -275,13 +283,13 @@ jobs:
               -print -quit)"
 
             if [[ -z "$BINARY" ]]; then
-              echo "32-bit binary not found."
+              echo "Windows $ARCH binary not found."
               ls -lah build/bin/
               exit 1
             fi
 
             cp "$BINARY" \
-              "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-386.exe"
+              "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-${ARCH}.exe"
           fi
 
       # macOS DMG
