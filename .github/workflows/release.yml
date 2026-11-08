@@ -160,7 +160,6 @@ jobs:
             wails build -tags webkit2_41
 
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            # برای ویندوز کاملاً ساده و بدون NSIS بیلد میکنیم
             wails build -platform windows/${{ matrix.arch }}
 
           else
@@ -247,7 +246,6 @@ jobs:
           ARCH="${{ matrix.arch }}"
           mkdir -p release-assets
 
-          # پیدا کردن فایل exe ساخته شده
           BINARY="$(find build/bin \
             -maxdepth 1 \
             -type f \
@@ -260,9 +258,25 @@ jobs:
             exit 1
           fi
 
-          # کپی کردن با نام دقیق معماری
           cp "$BINARY" \
             "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-${ARCH}.exe"
+
+      # --- NEW: Free up macOS disk space ---
+      - name: Free up macOS disk space
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          echo "Disk space before cleanup:"
+          df -h /System/Volumes/Data
+
+          # Remove Xcode simulators, derived data, and caches to free space
+          sudo rm -rf ~/Library/Developer/CoreSimulator/Devices/* 2>/dev/null || true
+          sudo rm -rf ~/Library/Developer/Xcode/DerivedData/* 2>/dev/null || true
+          sudo rm -rf ~/Library/Caches/* 2>/dev/null || true
+          sudo rm -rf /Applications/Xcode_*.app 2>/dev/null || true
+
+          echo "Disk space after cleanup:"
+          df -h /System/Volumes/Data
 
       # macOS DMG
       - name: Package macOS DMG
@@ -286,6 +300,9 @@ jobs:
           ARCH="$(uname -m)"
 
           mkdir -p release-assets
+
+          echo "Disk space before DMG creation:"
+          df -h /System/Volumes/Data
 
           hdiutil create \
             -volname "ZirGozar" \
