@@ -93,6 +93,10 @@ jobs:
             platform: windows
             arch: "386"
 
+          - os: windows-latest
+            platform: windows
+            arch: arm64
+
           - os: macos-latest
             platform: macos
 
@@ -123,11 +127,6 @@ jobs:
             libgtk-3-dev \
             libwebkit2gtk-4.1-dev \
             dpkg-dev
-
-      - name: Install NSIS
-        if: runner.os == 'Windows' && matrix.arch == 'amd64'
-        shell: pwsh
-        run: choco install nsis --yes --no-progress
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
@@ -161,11 +160,7 @@ jobs:
             wails build -tags webkit2_41
 
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            if [[ "${{ matrix.arch }}" == "amd64" ]]; then
-              wails build -platform windows/amd64 -nsis
-            else
-              wails build -platform windows/386
-            fi
+            wails build -platform windows/${{ matrix.arch }}
 
           else
             wails build
@@ -241,7 +236,7 @@ jobs:
             --build "$PKG_ROOT" \
             "release-assets/ZirGozar-${GITHUB_REF_NAME}-linux-amd64.deb"
 
-      # Windows artifacts (amd64 installer + 386 portable)
+      # Windows artifacts (Simple EXE version)
       - name: Package Windows artifacts
         if: runner.os == 'Windows'
         shell: bash
@@ -251,38 +246,37 @@ jobs:
           ARCH="${{ matrix.arch }}"
           mkdir -p release-assets
 
-          if [[ "$ARCH" == "amd64" ]]; then
-            INSTALLER="$(find build/bin \
-              -maxdepth 1 \
-              -type f \
-              -iname '*installer*.exe' \
-              -print -quit)"
+          BINARY="$(find build/bin \
+            -maxdepth 1 \
+            -type f \
+            -iname '*.exe' \
+            -print -quit)"
 
-            if [[ -z "$INSTALLER" ]]; then
-              echo "NSIS installer not found."
-              ls -lah build/bin/
-              exit 1
-            fi
-
-            cp "$INSTALLER" \
-              "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-amd64-setup.exe"
-          else
-            BINARY="$(find build/bin \
-              -maxdepth 1 \
-              -type f \
-              -iname '*.exe' \
-              ! -iname '*installer*' \
-              -print -quit)"
-
-            if [[ -z "$BINARY" ]]; then
-              echo "32-bit binary not found."
-              ls -lah build/bin/
-              exit 1
-            fi
-
-            cp "$BINARY" \
-              "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-386.exe"
+          if [[ -z "$BINARY" ]]; then
+            echo "Windows $ARCH binary not found."
+            ls -lah build/bin/
+            exit 1
           fi
+
+          cp "$BINARY" \
+            "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-${ARCH}.exe"
+
+      # --- NEW: Free up macOS disk space ---
+      - name: Free up macOS disk space
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          echo "Disk space before cleanup:"
+          df -h /System/Volumes/Data
+
+          # Remove Xcode simulators, derived data, and caches to free space
+          sudo rm -rf ~/Library/Developer/CoreSimulator/Devices/* 2>/dev/null || true
+          sudo rm -rf ~/Library/Developer/Xcode/DerivedData/* 2>/dev/null || true
+          sudo rm -rf ~/Library/Caches/* 2>/dev/null || true
+          sudo rm -rf /Applications/Xcode_*.app 2>/dev/null || true
+
+          echo "Disk space after cleanup:"
+          df -h /System/Volumes/Data
 
       # macOS DMG
       - name: Package macOS DMG
@@ -306,6 +300,9 @@ jobs:
           ARCH="$(uname -m)"
 
           mkdir -p release-assets
+
+          echo "Disk space before DMG creation:"
+          df -h /System/Volumes/Data
 
           hdiutil create \
             -volname "ZirGozar" \
