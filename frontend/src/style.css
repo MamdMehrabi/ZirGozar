@@ -394,3 +394,93 @@ button:disabled { cursor: not-allowed; opacity: .48; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  min-width: 800px;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+body { min-height: 0; }
+
+.app-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+
+.sidebar, .main-column { height: 100%; min-height: 0; }
+.sidebar { overflow: hidden; }
+.main-column { overflow: hidden; }
+.app-topbar { padding-right: 28px; padding-left: 28px; }
+.page-scroll { min-height: 0; overflow: hidden; display: flex; }
+.page-content { width: 100%; max-width: 1120px; height: 100%; min-height: 0; margin: 0 auto; padding: 23px 30px; overflow: hidden; }
+.page-content--home, .page-content--profiles, .page-content--logs, .page-content--settings, .page-content--about { display: flex; flex-direction: column; }
+.page-heading { flex: 0 0 auto; margin-bottom: 16px; }
+.page-heading h1 { font-size: 26px; }
+.page-subtitle { max-width: 720px; }
+.page-loading { width: 100%; min-height: 0; }
+
+.page-content--home { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); gap: 13px; }
+.page-content--home .page-heading { align-items: center; margin: 0; }
+.page-content--home .page-heading h1 { margin-top: 2px; margin-bottom: 3px; font-size: 23px; }
+.page-content--home .page-subtitle { font-size: 11px; }
+.page-content--home .connection-card { margin: 0; }
+.page-content--home .connection-card__top { min-height: 105px; padding: 17px 19px; }
+.page-content--home .connection-copy h2 { font-size: 19px; }
+.page-content--home .connection-card__footer { min-height: 34px; }
+.page-content--home .inline-alert { margin: 0; }
+.home-grid { min-height: 0; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(220px, .85fr); gap: 13px; }
+.home-profile, .home-traffic { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.home-profile { overflow: hidden; }
+.home-traffic { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 9px; }
+.home-grid .section-heading { align-items: center; margin: 1px 0 9px; }
+.home-grid .section-heading h2 { font-size: 14px; }
+.home-grid .section-heading--compact { margin: 1px 0 0; }
+.profile-summary, .empty-panel { min-height: 64px; }
+.home-traffic .stats-grid { min-height: 0; grid-template-columns: 1fr; grid-auto-rows: minmax(0, 1fr); gap: 8px; }
+.home-traffic .stat-panel { align-content: center; gap: 5px; padding: 11px 13px; }
+.home-traffic .stat-panel strong { font-size: 17px; }
+.home-traffic .quick-actions { grid-template-columns: 1fr; gap: 7px; margin-top: 0; }
+.home-traffic .quick-actions button { padding: 9px 11px; }
+
+.page-content--profiles .profile-list { min-height: 0; flex: 1 1 auto; align-content: start; overflow-y: auto; overscroll-behavior: contain; padding: 1px 3px 4px 0; }
+.page-content--profiles .editor-panel { min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
+.page-content--profiles .empty-state { min-height: 0; flex: 1 1 auto; }
+.page-content--profiles > .helper-note { flex: 0 0 auto; }
+
+.page-content--logs .log-panel { min-height: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
+.page-content--logs .log-list { min-height: 0; max-height: none; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; }
+.page-content--logs .log-empty { min-height: 100%; }
+.page-content--logs > .helper-note { flex: 0 0 auto; margin-bottom: 0; }
+
+.page-content--settings .settings-scroll { min-height: 0; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; padding-right: 3px; }
+.page-content--settings .settings-group { margin-bottom: 10px; }
+.page-content--about .about-card { flex: 0 0 auto; }
+.page-content--about .about-details { min-height: 0; }
+
+@media (max-width: 900px) {
+  .app-shell { grid-template-columns: 190px minmax(0, 1fr); }
+  .page-content { padding-right: 20px; padding-left: 20px; }
+  .app-topbar { padding-right: 20px; padding-left: 20px; }
+  .home-grid { grid-template-columns: minmax(0, 1fr) minmax(190px, .82fr); gap: 9px; }
+  .page-content--home .connection-card__top { padding: 14px; }
+}
+
+@media (max-height: 680px) {
+  .page-content { padding-top: 14px; padding-bottom: 14px; }
+  .page-heading { margin-bottom: 10px; }
+  .page-content--home { gap: 8px; }
+  .page-content--home .connection-card__top { min-height: 83px; padding: 11px 15px; }
+  .page-content--home .connection-emblem { width: 36px; height: 36px; }
+  .page-content--home .connection-card__footer { min-height: 30px; }
+  .home-grid { gap: 8px; }
+  .home-traffic { gap: 5px; }
+  .home-traffic .stat-panel { padding: 8px 10px; }
+  .home-traffic .quick-actions button { padding: 7px 9px; }
+}

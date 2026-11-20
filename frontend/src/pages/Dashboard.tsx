@@ -16,6 +16,7 @@ import {
   ValidateXrayConfig,
 } from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
+import { MainLayout } from "../layouts/MainLayout";
 import { useAppStore } from "../store/app";
 
 interface TrafficStats {
@@ -69,14 +70,6 @@ const themes: { id: ThemeId; name: string; color: string }[] = [
   { id: "graphite", name: "Graphite", color: "#a8c9c4" },
   { id: "aurora", name: "Aurora", color: "#6bd4b2" },
   { id: "ember", name: "Ember", color: "#e9ae69" },
-];
-
-const pages: { id: PageId; label: string; icon: string }[] = [
-  { id: "home", label: "Home", icon: "home" },
-  { id: "profiles", label: "Profiles", icon: "layers" },
-  { id: "logs", label: "Logs", icon: "list" },
-  { id: "settings", label: "Settings", icon: "settings" },
-  { id: "about", label: "About", icon: "info" },
 ];
 
 const emptyTraffic: TrafficStats = {
@@ -618,52 +611,17 @@ export function Dashboard() {
     : isRunning ? "Connected" : error ? "Needs attention" : connectionStatus === "unknown" ? "Checking" : "Disconnected";
 
   return (
-    <main className="app-shell" data-theme={theme}>
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark" aria-hidden="true"><span /><span /></div>
-          <div><strong>ZirGozar</strong><small>XRAY CLIENT</small></div>
-        </div>
-        <div className="sidebar-label">Workspace</div>
-        <nav className="nav-list" aria-label="Main navigation">
-          {pages.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`nav-item ${page === item.id ? "nav-item--active" : ""}`}
-              aria-current={page === item.id ? "page" : undefined}
-              onClick={() => changePage(item.id)}
-            >
-              <Icon name={item.icon} />
-              <span>{item.label}</span>
-              {item.id === "logs" && logs.length > 0 && <span className="nav-count">{logs.length}</span>}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-bottom">
-          <div className={`sidebar-connection ${isRunning ? "sidebar-connection--on" : ""}`}>
-            <span className="connection-dot" />
-            <span>{statusLabel}</span>
-            <small>{isRunning ? "Xray core active" : "Xray core idle"}</small>
-          </div>
-          <div className="sidebar-version">ZirGozar · Desktop</div>
-        </div>
-      </aside>
-
-      <div className="main-column">
-        <header className="app-topbar">
-          <div className="breadcrumb"><span>ZirGozar</span><span className="breadcrumb-separator">/</span><strong>{pages.find((item) => item.id === page)?.label}</strong></div>
-          <div className="topbar-status" role="status" aria-live="polite">
-            <span className={`connection-dot ${isRunning ? "connection-dot--on" : ""}`} />
-            {statusLabel}
-          </div>
-        </header>
-
-        <div className="page-scroll" aria-busy={loading}>
-          {loading ? (
-            <div className="page-loading"><span className="loading-spinner" />Connecting to the local runtime…</div>
-          ) : page === "home" ? (
-            <section className="page-content">
+    <MainLayout
+      page={page}
+      onNavigate={changePage}
+      theme={theme}
+      statusLabel={statusLabel}
+      isRunning={isRunning}
+      logCount={logs.length}
+      loading={loading}
+    >
+      {page === "home" ? (
+            <section className="page-content page-content--home">
               <div className="page-heading">
                 <div><p className="eyebrow">OVERVIEW</p><h1>Home</h1><p className="page-subtitle">Your connection, profile, and live runtime at a glance.</p></div>
                 <button className="button button--quiet" type="button" onClick={() => changePage("profiles")}>Manage profiles <Icon name="arrow" /></button>
@@ -700,6 +658,8 @@ export function Dashboard() {
 
               {error && <div className="inline-alert" role="alert">{error}</div>}
 
+              <div className="home-grid">
+                <section className="home-profile">
               <div className="section-heading"><div><p className="eyebrow">ACTIVE PROFILE</p><h2>Connection profile</h2></div><button className="text-button" type="button" onClick={() => changePage("profiles")}>View all <Icon name="arrow" /></button></div>
               {selectedProfile ? (
                 <section className="profile-summary">
@@ -733,6 +693,8 @@ export function Dashboard() {
                 </section>
               )}
 
+                </section>
+                <section className="home-traffic">
               <div className="section-heading section-heading--compact"><div><p className="eyebrow">LIVE RUNTIME</p><h2>Traffic</h2></div><span className="section-meta">{isRunning ? "Since this Xray process started" : "Available while connected"}</span></div>
               <div className="stats-grid">
                 <article className="stat-panel">
@@ -751,9 +713,11 @@ export function Dashboard() {
                 <button type="button" onClick={() => changePage("profiles")}><Icon name="layers" /><span><strong>Manage profiles</strong><small>{profiles.length} saved</small></span><Icon name="arrow" /></button>
                 <button type="button" onClick={() => changePage("logs")}><Icon name="list" /><span><strong>View logs</strong><small>{logs.length ? `${logs.length} recent entries` : "Runtime output and diagnostics"}</small></span><Icon name="arrow" /></button>
               </div>
+                </section>
+              </div>
             </section>
           ) : page === "profiles" ? (
-            <section className="page-content">
+            <section className="page-content page-content--profiles">
               <div className="page-heading">
                 <div><p className="eyebrow">CONNECTION LIBRARY</p><h1>Profiles</h1><p className="page-subtitle">Import a local Xray JSON configuration or save supported server URIs on this device.</p></div>
                 {!editingProfileId && <button className="button button--primary" type="button" onClick={startNewProfile}>Add profile <span aria-hidden="true">+</span></button>}
@@ -820,7 +784,7 @@ export function Dashboard() {
               {isRunning && <p className="helper-note">Select a profile or server to switch the active connection. The current Xray process will be stopped before the new server starts.</p>}
             </section>
           ) : page === "logs" ? (
-            <section className="page-content">
+            <section className="page-content page-content--logs">
               <div className="page-heading">
                 <div><p className="eyebrow">DIAGNOSTICS</p><h1>Logs</h1><p className="page-subtitle">Recent Xray process output captured during this app session.</p></div>
                 <div className="heading-actions"><button className="button button--quiet" type="button" onClick={() => void refreshDashboard()}>Refresh status</button><button className="button button--secondary" type="button" onClick={exportLogs} disabled={logs.length === 0}>Export</button><button className="button button--quiet" type="button" onClick={() => setLogs([])} disabled={logs.length === 0}>Clear</button></div>
@@ -838,9 +802,10 @@ export function Dashboard() {
               <p className="helper-note">Logs are collected in memory and cleared when ZirGozar closes or when you clear them. Xray output can contain server details; review before sharing.</p>
             </section>
           ) : page === "settings" ? (
-            <section className="page-content">
+            <section className="page-content page-content--settings">
               <div className="page-heading"><div><p className="eyebrow">PREFERENCES</p><h1>Settings</h1><p className="page-subtitle">A few practical options for how ZirGozar connects and looks.</p></div></div>
               {error && <div className="inline-alert" role="alert">{error}</div>}
+              <div className="settings-scroll">
               <section className="settings-group">
                 <div className="settings-group__heading"><div><h2>Appearance</h2><p>Choose the app’s color accent.</p></div></div>
                 <div className="theme-options">
@@ -870,9 +835,10 @@ export function Dashboard() {
                 <div className="settings-group__heading"><div><h2>Xray runtime</h2><p>Runtime information available to this installation.</p></div></div>
                 <div className="runtime-info"><span>Executable</span><code>{binaryPath || "Not found"}</code><span>Status</span><strong>{statusLabel}</strong></div>
               </section>
+              </div>
             </section>
           ) : (
-            <section className="page-content">
+            <section className="page-content page-content--about">
               <div className="page-heading"><div><p className="eyebrow">APPLICATION</p><h1>About ZirGozar</h1><p className="page-subtitle">A focused desktop interface for managing an Xray-core connection.</p></div></div>
               <section className="about-card">
                 <div className="about-mark"><div className="brand-mark" aria-hidden="true"><span /><span /></div></div>
@@ -885,8 +851,6 @@ export function Dashboard() {
               </section>
             </section>
           )}
-        </div>
-      </div>
-    </main>
+    </MainLayout>
   );
 }
