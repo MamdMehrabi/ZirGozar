@@ -126,7 +126,9 @@ jobs:
             pkg-config \
             libgtk-3-dev \
             libwebkit2gtk-4.1-dev \
-            dpkg-dev
+            dpkg-dev \
+            libfuse2 \
+            wget
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
@@ -166,8 +168,8 @@ jobs:
             wails build
           fi
 
-      # Linux DEB package
-      - name: Package Linux DEB
+      # Linux DEB & AppImage packages
+      - name: Package Linux DEB and AppImage
         if: runner.os == 'Linux'
         shell: bash
         run: |
@@ -189,6 +191,9 @@ jobs:
             exit 1
           fi
 
+          mkdir -p release-assets
+
+          # --- 1. Build DEB Package ---
           PKG_ROOT="dist/${APP_ID}_${VERSION}_amd64"
 
           mkdir -p \
@@ -230,13 +235,40 @@ jobs:
             echo "Icon=${APP_ID}" >> "$PKG_ROOT/usr/share/applications/${APP_ID}.desktop"
           fi
 
-          mkdir -p release-assets
-
           dpkg-deb --root-owner-group \
             --build "$PKG_ROOT" \
             "release-assets/ZirGozar-${GITHUB_REF_NAME}-linux-amd64.deb"
 
-      # Windows artifacts (Simple EXE version)
+          # --- 2. Build AppImage Package ---
+          APPDIR="dist/${APP_ID}.AppDir"
+          mkdir -p "$APPDIR/usr/bin"
+
+          install -m 755 "$APP_BINARY" "$APPDIR/usr/bin/$APP_ID"
+
+          cat > "$APPDIR/AppRun" <<EOF
+          #!/bin/sh
+          HERE="\$(dirname "\$(readlink -f "\${0}")")"
+          export PATH="\${HERE}/usr/bin:\${PATH}"
+          exec "\${HERE}/usr/bin/${APP_ID}" "\$@"
+          EOF
+          chmod +x "$APPDIR/AppRun"
+
+          cp "$PKG_ROOT/usr/share/applications/${APP_ID}.desktop" "$APPDIR/${APP_ID}.desktop"
+
+          if [[ -f build/appicon.png ]]; then
+            cp build/appicon.png "$APPDIR/${APP_ID}.png"
+          else
+            # Fallback empty 1x1 icon if appicon.png is missing so appimagetool doesn't fail
+            touch "$APPDIR/${APP_ID}.png"
+          fi
+
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+
+          ARCH=x86_64 ./appimagetool --appimage-extract-and-run "$APPDIR" \
+            "release-assets/ZirGozar-${GITHUB_REF_NAME}-linux-x86_64.AppImage"
+
+      # Windows artifacts (Clear architecture naming)
       - name: Package Windows artifacts
         if: runner.os == 'Windows'
         shell: bash
@@ -258,10 +290,25 @@ jobs:
             exit 1
           fi
 
-          cp "$BINARY" \
-            "release-assets/ZirGozar-${GITHUB_REF_NAME}-windows-${ARCH}.exe"
+          case "$ARCH" in
+            amd64)
+              LABEL="windows-x64-64bit"
+              ;;
+            386)
+              LABEL="windows-x86-32bit"
+              ;;
+            arm64)
+              LABEL="windows-arm64"
+              ;;
+            *)
+              LABEL="windows-$ARCH"
+              ;;
+          esac
 
-      # --- NEW: Free up macOS disk space ---
+          cp "$BINARY" \
+            "release-assets/ZirGozar-${GITHUB_REF_NAME}-${LABEL}.exe"
+
+      # Free up macOS disk space
       - name: Free up macOS disk space
         if: runner.os == 'macOS'
         shell: bash
@@ -269,7 +316,6 @@ jobs:
           echo "Disk space before cleanup:"
           df -h /System/Volumes/Data
 
-          # Remove Xcode simulators, derived data, and caches to free space
           sudo rm -rf ~/Library/Developer/CoreSimulator/Devices/* 2>/dev/null || true
           sudo rm -rf ~/Library/Developer/Xcode/DerivedData/* 2>/dev/null || true
           sudo rm -rf ~/Library/Caches/* 2>/dev/null || true
